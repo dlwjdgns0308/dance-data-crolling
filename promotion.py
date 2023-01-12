@@ -13,10 +13,10 @@ def getAngle(firstPoint,midPoint,lastPoint):
   return result
 def getNeckAngle(ear,shoulder):
 
-        result = np.degrees(mt.atan2(shoulder.y - shoulder.y,
-            (shoulder.x + 100 )- shoulder.x)
-                - mt.atan2(ear.y - shoulder.y,
-            ear.x - shoulder.x))
+        result = np.degrees(mt.atan2(shoulder[0][1] - shoulder[0][1],
+            (shoulder[0][0] + 100 )- shoulder[0][0])
+                - mt.atan2(ear[0][1] - shoulder[0][1],
+            ear[0][0] - shoulder[0][0]))
 
         result = abs(result) # 각도는 절대 음수일 수 없습니다
 
@@ -70,7 +70,22 @@ while cap.isOpened():
           v1 = joint[[0,1,2,3,0,5,6,7,0,9,10,11,0,13,14,15,0,17,18,19], :3] # Parent joint
           v2 = joint[[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], :3] # Child joint
           v = v2 - v1 # [20, 3]
-          print(getAngle(joint[[12],:3],joint[[14],:3],joint[[16],:3]))
+          #왼쪽 목
+          leftNeckAngle = getNeckAngle(joint[[7],:3],joint[[11],:3])
+          #오른쪽 목
+          rightNeckAngle = getNeckAngle(joint[[7],:3],joint[[11],:3])
+          # 왼쪽 가슴
+          rightArmAngle = getAngle(joint[[11],:3],joint[[23],:3],joint[[25],:3])
+          # 오른쪽 가슴
+          rightChestAngle = getAngle(joint[[12],:3],joint[[24],:3],joint[[26],:3])
+          # 왼쪽 다리
+          rightArmAngle = getAngle(joint[[23],:3],joint[[25],:3],joint[[27],:3])
+          # 오른쪽 다리
+          rightArmAngle = getAngle(joint[[24],:3],joint[[26],:3],joint[[28],:3])
+          # 왼쪽 팔
+          rightArmAngle = getAngle(joint[[11],:3],joint[[13],:3],joint[[15],:3])
+          # 오른쪽 팔
+          rightArmAngle = getAngle(joint[[12],:3],joint[[14],:3],joint[[16],:3])
           
 
          # Get angle using arcos of dot product
