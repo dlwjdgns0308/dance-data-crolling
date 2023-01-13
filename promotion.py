@@ -4,6 +4,7 @@ import time, os
 import numpy as np
 import math as mt
 
+
 def getAngle(firstPoint,midPoint,lastPoint):
   result = np.degrees(mt.atan2(lastPoint[0][1] - midPoint[0][1],
   lastPoint[0][0]-midPoint[0][0])-mt.atan2(firstPoint[0][1]-midPoint[0][1],firstPoint[0][0]-midPoint[0][0]))
@@ -14,7 +15,7 @@ def getAngle(firstPoint,midPoint,lastPoint):
 def getNeckAngle(ear,shoulder):
 
         result = np.degrees(mt.atan2(shoulder[0][1] - shoulder[0][1],
-            (shoulder[0][0] + 100 )- shoulder[0][0])
+            (shoulder[0][0] + 100 ) - shoulder[0][0])
                 - mt.atan2(ear[0][1] - shoulder[0][1],
             ear[0][0] - shoulder[0][0]))
 
@@ -38,8 +39,11 @@ pose = mp_pose.Pose(
     min_tracking_confidence=0.5)
 # For webcam input:
 
-dance = "./dance.mp4"
+dance = "./asd.mp4"
 cap = cv2.VideoCapture(dance)
+width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+print('original size: %d, %d' % (width, height))
 
 created_time = int(time.time())
 os.makedirs('dataset', exist_ok=True)
@@ -57,50 +61,59 @@ while cap.isOpened():
     while time.time() - start_time < secs_for_action:
       ret, img = cap.read()
       
+      img.flags.writeable = False
       img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
       result = pose.process(img)
+      img.flags.writeable = True
       img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-      if result.pose_landmarks is not None:
-        for res in [result.pose_landmarks]:
+      if result.pose_world_landmarks is not None:
+        for res in [result.pose_world_landmarks]:
           joint = np.zeros((33,4))
           for j, lm in enumerate(res.landmark):
             joint[j] = [lm.x, lm.y, lm.z, lm.visibility]
-          # Compute angles between joints
-          v1 = joint[[0,1,2,3,0,5,6,7,0,9,10,11,0,13,14,15,0,17,18,19], :3] # Parent joint
-          v2 = joint[[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], :3] # Child joint
-          v = v2 - v1 # [20, 3]
+          
           #왼쪽 목
           leftNeckAngle = getNeckAngle(joint[[7],:3],joint[[11],:3])
           #오른쪽 목
-          rightNeckAngle = getNeckAngle(joint[[7],:3],joint[[11],:3])
-          # 왼쪽 가슴
-          rightArmAngle = getAngle(joint[[11],:3],joint[[23],:3],joint[[25],:3])
-          # 오른쪽 가슴
-          rightChestAngle = getAngle(joint[[12],:3],joint[[24],:3],joint[[26],:3])
+          rightNeckAngle = getNeckAngle(joint[[8],:3],joint[[12],:3])
+
+          # 왼쪽 골반
+          leftPelvisAngle = getAngle(joint[[11],:3],joint[[23],:3],joint[[25],:3])
+          # 오른쪽 골반
+          rightPelvisAngle = getAngle(joint[[12],:3],joint[[24],:3],joint[[26],:3])
+
           # 왼쪽 다리
-          rightArmAngle = getAngle(joint[[23],:3],joint[[25],:3],joint[[27],:3])
+          leftLegAngle = getAngle(joint[[23],:3],joint[[25],:3],joint[[27],:3])
           # 오른쪽 다리
-          rightArmAngle = getAngle(joint[[24],:3],joint[[26],:3],joint[[28],:3])
+          rightLegAngle = getAngle(joint[[24],:3],joint[[26],:3],joint[[28],:3])
+
+          # 왼쪽 어깨
+          leftShoulderAngle = getAngle(joint[[13],:3],joint[[11],:3],joint[[23],:3])
+          # 오른쪽 어깨
+          rightShoulderAngle = getAngle(joint[[14],:3],joint[[12],:3],joint[[24],:3])
+          
           # 왼쪽 팔
-          rightArmAngle = getAngle(joint[[11],:3],joint[[13],:3],joint[[15],:3])
+          leftArmAngle = getAngle(joint[[11],:3],joint[[13],:3],joint[[15],:3])
           # 오른쪽 팔
           rightArmAngle = getAngle(joint[[12],:3],joint[[14],:3],joint[[16],:3])
-          
+          print("왼쪽목{} 오른쪽목{}\n왼쪽골반{} 오른쪽골반{}\n왼쪽다리{} 오른쪽다리{} \n왼쪽어꺠{} 오른쪽어깨{}\n왼쪽팔{} 오른쪽팔{}\n".format(leftNeckAngle,rightNeckAngle,leftPelvisAngle,rightPelvisAngle,leftLegAngle,rightLegAngle,
+          leftShoulderAngle,rightShoulderAngle,leftArmAngle,rightArmAngle))
+          print(type(leftNeckAngle))
 
          # Get angle using arcos of dot product
-          angle = np.arccos(np.einsum('nt,nt->n',
-          v[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18],:], 
-          v[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19],:])) # [15,]
+          # angle = np.arccos(np.einsum('nt,nt->n',
+          # v[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18],:], 
+          # v[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19],:])) # [15,]
 
-          angle = np.degrees(angle) # Convert radian to degree
+          # angle = np.degrees(angle) # Convert radian to degree
 
-          angle_label = np.array([angle], dtype=np.float32)
-          angle_label = np.append(angle_label, idx)
+          # angle_label = np.array([angle], dtype=np.float32)
+          # angle_label = np.append(angle_label, idx)
 
-          d = np.concatenate([joint.flatten(), angle_label])
+          # d = np.concatenate([joint.flatten(), angle_label])
 
-          data.append(d)
+          # data.append(d)
       # Draw landmark annotation on the image.
           mp_drawing.draw_landmarks(
               img,
