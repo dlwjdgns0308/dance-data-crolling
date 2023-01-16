@@ -3,6 +3,7 @@ import mediapipe as mp
 import time, os
 import numpy as np
 import math as mt
+import arm_angle as arm
 
 
 def getAngle(firstPoint,midPoint,lastPoint):
@@ -21,12 +22,12 @@ def getNeckAngle(ear,shoulder):
 
         result = abs(result) # 각도는 절대 음수일 수 없습니다
 
-        if (result > 180) :
-            result = 360.0 - result # 항상 각도를 선명하게 표현하십시오.
+        # if (result > 180) :
+        #     result = 360.0 - result # 항상 각도를 선명하게 표현하십시오.
         return result
     
 
-actions = ['dance']
+actions = ['nxde_dance_cover_360']
 seq_length = 30
 secs_for_action = 60
 
@@ -39,7 +40,7 @@ pose = mp_pose.Pose(
     min_tracking_confidence=0.5)
 # For webcam input:
 
-dance = "./asd.mp4"
+dance = "./dance.mp4"
 cap = cv2.VideoCapture(dance)
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -50,7 +51,7 @@ os.makedirs('dataset', exist_ok=True)
 
 while cap.isOpened():
   for idx, action in enumerate(actions):
-    data = []
+    data = [[],[],[],[],[],[],[],[],[],[]]
     ret, img = cap.read()
     img = cv2.flip(img, 1)
     cv2.putText(img, f'Waiting for collecting {action.upper()} action...', org=(10, 30), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
@@ -99,8 +100,17 @@ while cap.isOpened():
           rightArmAngle = getAngle(joint[[12],:3],joint[[14],:3],joint[[16],:3])
           print("왼쪽목{} 오른쪽목{}\n왼쪽골반{} 오른쪽골반{}\n왼쪽다리{} 오른쪽다리{} \n왼쪽어꺠{} 오른쪽어깨{}\n왼쪽팔{} 오른쪽팔{}\n".format(leftNeckAngle,rightNeckAngle,leftPelvisAngle,rightPelvisAngle,leftLegAngle,rightLegAngle,
           leftShoulderAngle,rightShoulderAngle,leftArmAngle,rightArmAngle))
-          print(type(leftNeckAngle))
-
+          data[0].append(leftNeckAngle)
+          data[1].append(rightNeckAngle)
+          data[2].append(leftPelvisAngle)
+          data[3].append(rightPelvisAngle)
+          data[4].append(leftLegAngle)
+          data[5].append(rightLegAngle)
+          data[6].append(leftShoulderAngle)
+          data[7].append(rightShoulderAngle)
+          data[8].append(leftArmAngle)
+          data[9].append(rightArmAngle)
+          
          # Get angle using arcos of dot product
           # angle = np.arccos(np.einsum('nt,nt->n',
           # v[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18],:], 
@@ -122,9 +132,9 @@ while cap.isOpened():
               landmark_drawing_spec=mp_drawing_styles
               .get_default_pose_landmarks_style())
       # Flip the image horizontally for a selfie-view display.
-      cv2.imshow('img', img)
-      if cv2.waitKey(1) == ord('q'):
-        break
+        cv2.imshow('isdmg', img)
+        if cv2.waitKey(1) == ord('q'):
+          break
     data = np.array(data)
     print(action, data.shape)
     np.save(os.path.join('dataset', f'raw_{action}_{created_time}'), data)
@@ -137,4 +147,4 @@ while cap.isOpened():
     # full_seq_data = np.array(full_seq_data)
     # print(action, full_seq_data.shape)
     # np.save(os.path.join('dataset', f'seq_{action}_{created_time}'), full_seq_data)
-  break      
+  break
